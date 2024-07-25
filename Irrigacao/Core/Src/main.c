@@ -17,7 +17,7 @@
   */
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
-#include "main.h"
+#include "main.h"   
 #include "adc.h"
 #include "rtc.h"
 #include "spi.h"
@@ -25,15 +25,21 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+
+/* Inclusão de uma lib para utilizar LoRa */
 #include "Lora.h"
+/* Repositorio da Lib: https://github.com/SMotlaq/LoRa */
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-typedef WriteLora{
+// Struct dos dados que serão enviados 
+typedef struct WriteLora{
   uint8_t id;
   uint8_t hum;
 } myWriteLora;
+
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -48,18 +54,22 @@ typedef WriteLora{
 
 /* Private variables ---------------------------------------------------------*/
 
-RTC_HandleTypeDef hrtc;
-
 /* USER CODE BEGIN PV */
- LoRa myLoRa;
- uint16_t LoRa_stat;
 
- myWriteLora.id = 1;  //Identificação do sensor que vai ser passada
+// Inicializando a lib
+LoRa myLoRa;
 
- uint8_t segundos, minutos; 
+uint16_t LoRa_stat;
 
- RTC_DateTypeDef data;
- RTC_TimeTypeDef tempo;
+//Identificação do sensor que vai ser passada
+myWriteLora.id = 1;  
+
+//Variaveis que vão armazenar o tempo 
+unsigned long segundos, minutos; 
+
+// Variaveis que vão receber o tempo e a data do stm 
+RTC_DateTypeDef data;
+RTC_TimeTypeDef tempo;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -107,8 +117,10 @@ int main(void)
   MX_RTC_Init();
   /* USER CODE BEGIN 2 */
 
+  // 
   myLoRa = newLoRa();
 
+  // Configuração dos pinos 
   myLoRa.CS_port         = NSS_GPIO_Port;
   myLoRa.CS_pin          = NSS_Pin;
   myLoRa.reset_port      = RST_GPIO_Port;
@@ -117,6 +129,7 @@ int main(void)
   myLoRa.DIO0_pin        = DIO0_Pin;
   myLoRa.hSPIx           = &hspi1;
 
+  // Inicializo a função do adc
   HAL_ADC_Start(&hadc1);
 
   /* USER CODE END 2 */
@@ -129,23 +142,36 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 
+    /* Função para receber os valores do RTC */
     HAL_RTC_GetDate(&hrtc, %data, RTC_FORMAT_BIN);
     HAL_RTC_GetTime(&hrtc, %tempo, RTC_FORMAT_BIN);
 
     minutos = tempo.minutes;
     segundos = tempo.seconds;
+    marcador=0;
 
     // Lendo valores analógicos do sensor de humidade 
     HAL_ADC_PoolForConversion(&hadc1, 100);
     myWriteLora.hum = HAL_ADC_GetValue(&hadc1);
 
     LoRa_stat = LoRa_init(&myLora); 
-    
+
     if(LoRa_stat==LORA_OK){
-      Lora_transmit(&myLora, )
+      if(marcador == 0||(marcador + 720) >= minutos){
+
+        if(Lora_transmit(&myLora, (uint8_t*)&myWriteLora, 120, 100) == 1){
+          HAL_GPIO_WritePin(GPIOB, LED_Verde_Pin, GPIO_PIN_SET);
+          HAL_GPIO_WritePin(GPIOB, LED_Vermelho_Pin, GPIO_PIN_RESET);
+        }else{
+          HAL_GPIO_WritePin(GPIOB, LED_Verde_Pin, GPIO_PIN_RESET);
+          HAL_GPIO_WritePin(GPIOB, LED_Vermelho_Pin, GPIO_PIN_SET);
+        }
+        marcador = minutos;
     }
     else{
-
+      // Se der merda HAL_alguma coisa 
+      HAL_GPIO_WritePin(GPIOB, LED_Verde_Pin, GPIO_PIN_RESET);
+      HAL_GPIO_WritePin(GPIOB, LED_Vermelho_Pin, GPIO_PIN_SET);
     }
 
   }
