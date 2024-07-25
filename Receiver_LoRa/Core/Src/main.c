@@ -20,10 +20,9 @@
 #include "main.h"
 #include "spi.h"
 #include "gpio.h"
-#include "LoRa.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "LoRa.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -46,7 +45,7 @@
 COM_InitTypeDef BspCOMInit;
 
 /* USER CODE BEGIN PV */
-
+LoRa myLoRa;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -68,6 +67,20 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
+myLoRa = newLoRa();
+
+myLoRa.CS_port         = NSS_GPIO_Port;
+myLoRa.CS_pin          = NSS_Pin;
+myLoRa.reset_port      = RESET_GPIO_Port;
+myLoRa.reset_pin       = RESET_Pin;
+myLoRa.DIO0_port       = DIO0_GPIO_Port;
+myLoRa.DIO0_pin        = DIO0_Pin;
+myLoRa.hSPIx           = &hspi3;
+
+LoRa_reset(&myLoRa);
+	uint16_t LoRa_status = LoRa_init(&myLoRa);
+    LoRa_startReceiving(&myLoRa);
+
 
   /* USER CODE END 1 */
 
@@ -115,6 +128,11 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+	  if(LoRa_status == LORA_OK){
+		  LoRa_receive(&myLoRa, read_data, 128);
+		  //Verificando a potencia do sinal
+		  LoRa_getRSSI(LoRa* myLoRa);
+	  }
 
     /* USER CODE END WHILE */
 
