@@ -20,7 +20,7 @@
 #include "main.h"
 #include "spi.h"
 #include "gpio.h"
-
+#include "LoRa.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
